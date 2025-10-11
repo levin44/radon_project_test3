@@ -1,3 +1,4 @@
+// Working code-Nisal
 // ESP32 + PM04 (HS-100 C) Radon Sensor via I2C
 // - Reads "Average of the previous 10 minutes" registers every second
 // - Prints pCi/L and Bq/m^3 to Serial Monitor
