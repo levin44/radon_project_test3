@@ -1,4 +1,10 @@
-// Working code-Nisal
+// Modified by: Nisal v0.0.1
+// clode 2025-10-7
+// This code is used to read the data from the RADON sensor
+//tested timeout error
+// The sensor is a HS-100C / PM04 Radon Sensor
+// The sensor is connected to the ESP32 via I2C
+// The sensor is connected to the ESP32 via I2C
 // ESP32 + PM04 (HS-100 C) Radon Sensor via I2C
 // - Reads "Average of the previous 10 minutes" registers every second
 // - Prints pCi/L and Bq/m^3 to Serial Monitor

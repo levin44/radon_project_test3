@@ -1,3 +1,10 @@
+// Modified by: Nisal v0.0.1
+// ChtGt 2025-10-11
+// This code is used to read the data from the RADON sensor 
+// The sensor is a HS-100C / PM04 Radon Sensor
+// The sensor is connected to the ESP32 via I2C
+// The sensor is connected to the ESP32 via I2C
+
 #include <Wire.h>
 
 #define RADON_ADDR 0x6B   // I2C address from datasheet (0xD6 write / 0xD7 read)

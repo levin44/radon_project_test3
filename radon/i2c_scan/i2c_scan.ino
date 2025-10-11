@@ -1,3 +1,9 @@
+// Modified by: Nisal v0.0.1
+// ChtGt 2025-10-11
+// This code is used to scan the I2C bus for devices
+// The sensor is a HS-100C / PM04 Radon Sensor
+// The sensor is connected to the ESP32 via I2C
+// The sensor is connected to the ESP32 via I2C
 #include <Wire.h>
 void setup(){
   Serial.begin(115200);
