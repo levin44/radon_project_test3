@@ -4,6 +4,12 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <math.h>
+
+// Sine Wave Simulation Configuration
+const float SINE_WAVE_MIN_VALUE = 10.0;    // Lowest value of the sine wave
+const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
+const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
 const char* ssid = "NOVA";
@@ -35,6 +41,28 @@ void setupWiFi();
 void setupMQTT();
 void reconnect();
 void callback(char* topic, byte* message, unsigned int length);
+float generateSineWaveValue();
+
+// Sine Wave Simulation Function
+float generateSineWaveValue() {
+  // Get current time in milliseconds
+  unsigned long currentTime = millis();
+  
+  // Convert to seconds
+  float timeInSeconds = currentTime / 1000.0;
+  
+  // Calculate the phase of the sine wave (0 to 2π for one complete cycle)
+  float phase = (timeInSeconds / SINE_WAVE_INTERVAL) * 2.0 * PI;
+  
+  // Generate sine wave value between -1 and 1
+  float sineValue = sin(phase);
+  
+  // Scale and offset to fit between min and max values
+  float amplitude = (SINE_WAVE_MAX_VALUE - SINE_WAVE_MIN_VALUE) / 2.0;
+  float offset = SINE_WAVE_MIN_VALUE + amplitude;
+  
+  return sineValue * amplitude + offset;
+}
 
 void setup() {
   // Initialize serial communication
@@ -105,8 +133,8 @@ void reconnect() {
 }
 
 void publishData() {
-  // Simulate publishDataValue reading
-  publishDataValue = 35.89; // 
+  // Generate sine wave simulated data
+  publishDataValue = generateSineWaveValue();
 
   // Convert publishDataValue to char array
   char dataString[8];
