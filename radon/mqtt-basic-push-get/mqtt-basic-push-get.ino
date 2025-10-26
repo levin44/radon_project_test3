@@ -1,4 +1,4 @@
-//Created by Nisal - v0.0.1
+//Created by Nisal - v1.0.1
 //Basic MQTT publish subcribe code
 
 #include <Arduino.h>
@@ -23,8 +23,8 @@ const int ledPin = 2;
 long lastMsg = 0;
 const long msgInterval = 5000; // 5 seconds
 
-// Temperature variable
-float temperature = 0.0;
+// Publish Data variable
+float publishDataValue = 0.0;
 
 // Wi-Fi and MQTT clients
 WiFiClient wifiClient;
@@ -59,11 +59,11 @@ void loop() {
   // Handle incoming MQTT messages
   mqttClient.loop();
 
-  // Publish temperature data at regular intervals
+  // Publish  data at regular intervals
   long now = millis();
   if (now - lastMsg > msgInterval) {
     lastMsg = now;
-    publishTemperature();
+    publishData();
   }
 }
 
@@ -71,12 +71,10 @@ void setupWiFi() {
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   Serial.print("Connecting to Wi-Fi");
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-
   Serial.println();
   Serial.println("Connected to Wi-Fi");
 }
@@ -106,20 +104,18 @@ void reconnect() {
   }
 }
 
-void publishTemperature() {
-  // Simulate temperature reading
-  temperature = 35.89; // Temperature in Celsius
-  // Uncomment the next line to set temperature in Fahrenheit
-  // temperature = 1.8 * temperature + 32; // Temperature in Fahrenheit
+void publishData() {
+  // Simulate publishDataValue reading
+  publishDataValue = 35.89; // 
 
-  // Convert temperature to char array
-  char tempString[8];
-  dtostrf(temperature, 1, 2, tempString);
+  // Convert publishDataValue to char array
+  char dataString[8];
+  dtostrf(publishDataValue, 1, 2, dataString);
 
-  Serial.print("Publishing Temperature: ");
-  Serial.println(tempString);
+  Serial.print("Publishing Data Value: ");
+  Serial.println(dataString);
 
-  mqttClient.publish(publishTopicRadonValue, tempString);
+  mqttClient.publish(publishTopicRadonValue, dataString);
 }
 
 void callback(char* topic, byte* message, unsigned int length) {
