@@ -25,6 +25,17 @@ static const uint8_t REG_AVG10_BQ_HL  = 0x11; // integer low byte
 static const uint8_t REG_INITIAL_BOOT = 0x19; // 0..100 (%) ~6 minutes
 static const uint8_t REG_STATE        = 0x1A; // status packed in nibbles
 
+// Forward declare status struct to satisfy Arduino's auto-generated prototypes
+struct Pm04Status;
+
+// Decode packed status fields from REG_STATE (0x1A)
+struct Pm04Status {
+  uint8_t sensorStatus;   // bits 7..6: 0=Normal, 1=Abnormal, 2=Boot
+  uint8_t i2cStatus;      // bits 5..4: 0=Normal, 1=Normal w/correction, 2=I2C Error
+  uint8_t vibration;      // bits 3..2: 0=No vibration, 1=Vibration
+  uint8_t errorStatus;    // bits 1..0: 01 after power-on until healthy I2C for >3s
+};
+
 // Helper to write a register address then read N bytes
 static bool i2cRead(uint8_t deviceAddr, uint8_t regAddr, uint8_t *buffer, size_t length) {
   Wire.beginTransmission(deviceAddr);
@@ -39,14 +50,6 @@ static bool i2cRead(uint8_t deviceAddr, uint8_t regAddr, uint8_t *buffer, size_t
   }
   return true;
 }
-
-// Decode packed status fields from REG_STATE (0x1A)
-struct Pm04Status {
-  uint8_t sensorStatus;   // bits 7..6: 0=Normal, 1=Abnormal, 2=Boot
-  uint8_t i2cStatus;      // bits 5..4: 0=Normal, 1=Normal w/correction, 2=I2C Error
-  uint8_t vibration;      // bits 3..2: 0=No vibration, 1=Vibration
-  uint8_t errorStatus;    // bits 1..0: 01 after power-on until healthy I2C for >3s
-};
 
 static bool readStatus(uint8_t &bootPercent, Pm04Status &status) {
   uint8_t v;
