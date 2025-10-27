@@ -41,10 +41,20 @@ static bool i2cRead(uint8_t deviceAddr, uint8_t regAddr, uint8_t *buffer, size_t
   Wire.beginTransmission(deviceAddr);
   Wire.write(regAddr);
   uint8_t txStatus = Wire.endTransmission(false); // repeated start
-  if (txStatus != 0) return false;
+  if (txStatus != 0) {
+    Serial.print("I2C TX error: ");
+    Serial.println(txStatus);
+    return false;
+  }
 
   uint8_t numRead = Wire.requestFrom((int)deviceAddr, (int)length, (int)true);
-  if (numRead != length) return false;
+  if (numRead != length) {
+    Serial.print("I2C RX error: expected ");
+    Serial.print(length);
+    Serial.print(", got ");
+    Serial.println(numRead);
+    return false;
+  }
   for (size_t i = 0; i < length; ++i) {
     buffer[i] = Wire.read();
   }
@@ -79,6 +89,34 @@ static bool readPrev10MinAverages(float &pCiPerL, float &bqPerM3) {
   return true;
 }
 
+// I2C Scanner function to detect devices
+void scanI2C() {
+  Serial.println("Scanning I2C bus...");
+  int deviceCount = 0;
+  
+  for (uint8_t address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    uint8_t error = Wire.endTransmission();
+    
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println(" !");
+      deviceCount++;
+    }
+  }
+  
+  if (deviceCount == 0) {
+    Serial.println("No I2C devices found!");
+  } else {
+    Serial.print("Found ");
+    Serial.print(deviceCount);
+    Serial.println(" device(s)");
+  }
+  Serial.println();
+}
+
 void setup() {
   Serial.begin(115200);
   while (!Serial) { ; }
@@ -86,15 +124,59 @@ void setup() {
   Serial.println("Initializing I2C bus...");
 
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN, 100000); // 100kHz is plenty
-  delay(50);
+  delay(100); // Give more time for initialization
+  
+  // Scan for I2C devices
+  scanI2C();
+  
+  // Test specific PM04 address
+  Serial.print("Testing PM04 at address 0x6B...");
+  Wire.beginTransmission(PM04_I2C_ADDR);
+  uint8_t error = Wire.endTransmission();
+  if (error == 0) {
+    Serial.println(" OK - Device responding");
+  } else {
+    Serial.print(" FAILED - Error code: ");
+    Serial.println(error);
+    Serial.println("Possible issues:");
+    Serial.println("- Check wiring (SDA=21, SCL=22)");
+    Serial.println("- Verify 12V power supply");
+    Serial.println("- Check sensor is properly connected");
+  }
+  Serial.println();
 }
 
 void loop() {
+  static unsigned long lastScanTime = 0;
+  static int consecutiveErrors = 0;
+  
   uint8_t boot = 0;
   Pm04Status st{};
-  if (!readStatus(boot, st)) {
-    Serial.println("I2C read error (status). Check wiring and power (12V).\n");
-    delay(1000);
+  
+  // Try reading status with retry
+  bool statusRead = false;
+  for (int retry = 0; retry < 3; retry++) {
+    if (readStatus(boot, st)) {
+      statusRead = true;
+      consecutiveErrors = 0;
+      break;
+    }
+    delay(100); // Short delay between retries
+  }
+  
+  if (!statusRead) {
+    consecutiveErrors++;
+    Serial.print("I2C read error (status) - Attempt ");
+    Serial.print(consecutiveErrors);
+    Serial.println(". Check wiring and power (12V).");
+    
+    // Rescan I2C bus every 10 errors
+    if (consecutiveErrors % 10 == 0) {
+      Serial.println("Rescanning I2C bus...");
+      scanI2C();
+    }
+    
+    delay(2000); // Longer delay on error
     return;
   }
 
@@ -119,8 +201,19 @@ void loop() {
 
   float pCi = 0.0f;
   float bq  = 0.0f;
-  if (!readPrev10MinAverages(pCi, bq)) {
-    Serial.println("I2C read error (avg data).");
+  
+  // Try reading data with retry
+  bool dataRead = false;
+  for (int retry = 0; retry < 3; retry++) {
+    if (readPrev10MinAverages(pCi, bq)) {
+      dataRead = true;
+      break;
+    }
+    delay(100); // Short delay between retries
+  }
+  
+  if (!dataRead) {
+    Serial.println("I2C read error (avg data) - retrying...");
     delay(1000);
     return;
   }
