@@ -1,10 +1,15 @@
-//Created by Nisal - v1.0.1
-//Basic MQTT publish subcribe code
+//Created by Nisal - v1.0.2
+//ESP32 MQTT Radon Sensor1 
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <math.h>
+#include <Rd200m.h>
+
+//Radon initialize
+#define INTERVAL 60  //sec
+Rd200m radon(&Serial2);
 
 // Sine Wave Simulation Configuration
 const float SINE_WAVE_MIN_VALUE = 10.0;    // Lowest value of the sine wave
@@ -19,7 +24,10 @@ const char* password = "NOVA22NM";
 const char* mqttServer = "broker.hivemq.com";
 const int mqttPort = 1883;
 const char* publishTopicRadonValue = "radonvalue/sensor1";
-const char* subscribeTopicLED = "radoncontrol/led";
+const char* subscribeTopicMode = "radonvalue/mode1";
+
+// Mode
+String currentMode = "real"; //default mode is real
 
 
 // Pin definitions
@@ -41,10 +49,18 @@ void setupWiFi();
 void setupMQTT();
 void reconnect();
 void callback(char* topic, byte* message, unsigned int length);
-float generateSineWaveValue();
+float generateSimulatedValues();
+
+//Radon get value
+void getit() {
+  Serial.print(String(radon.value()) + String(" pCi"));
+  String s = radon.status();
+  if (s != "") Serial.println(String(" (")+ s +String(")"));
+  else Serial.println();
+}
 
 // Sine Wave Simulation Function
-float generateSineWaveValue() {
+float generateSimulatedValues() {
   // Get current time in milliseconds
   unsigned long currentTime = millis();
   
@@ -68,6 +84,12 @@ void setup() {
   // Initialize serial communication
   Serial.begin(115200);
 
+  //Radon setup
+  Serial2.begin(19200, SERIAL_8N1, 16, 17);
+  Serial.println("\nRadon Sensor RD200M V1.0 April 10, 2018");
+  radon.debug(0);
+  radon.onPacket(getit);
+
   // Set pin modes
   pinMode(ledPin, OUTPUT);
 
@@ -86,6 +108,9 @@ void loop() {
 
   // Handle incoming MQTT messages
   mqttClient.loop();
+
+  //Radon get value
+  updateRadonValue();
 
   // Publish  data at regular intervals
   long now = millis();
@@ -122,7 +147,7 @@ void reconnect() {
 
     if (mqttClient.connect(clientId.c_str())) {
       Serial.println("Connected to MQTT Broker.");
-      mqttClient.subscribe(subscribeTopicLED);
+      mqttClient.subscribe(subscribeTopicMode);
     } else {
       Serial.print("Failed, rc=");
       Serial.print(mqttClient.state());
@@ -133,8 +158,12 @@ void reconnect() {
 }
 
 void publishData() {
-  // Generate sine wave simulated data
-  publishDataValue = generateSineWaveValue();
+  if(currentMode == "real"){
+    publishDataValue = radon.value() ? radon.value()*37: 0.0;
+  }else if(currentMode == "simulated"){
+    // Generate sine wave simulated data
+    publishDataValue = generateSimulatedValues();
+  }
 
   // Convert publishDataValue to char array
   char dataString[8];
@@ -157,12 +186,22 @@ void callback(char* topic, byte* message, unsigned int length) {
   }
   Serial.println(messageTemp);
 
-  // Control the LED based on the message
-  if (messageTemp == "on") {
-    digitalWrite(ledPin, HIGH);
-    Serial.println("LED is ON");
-  } else if (messageTemp == "off") {
-    digitalWrite(ledPin, LOW);
-    Serial.println("LED is OFF");
+  // Control the Mode based on the message
+  if (messageTemp == "real") {
+    currentMode = "real";
+    Serial.println("Mode changed to : real");
+  } else if (messageTemp = "simulated") {
+    currentMode = "simulated";
+    Serial.println("Mode changed to : simulated");
   }
+}
+
+void updateRadonValue(){
+  static unsigned mark = 0;
+  
+  if (millis() > mark) {
+	  mark = millis() + (INTERVAL * 1000);
+	  radon.request();
+  }
+  radon.update();
 }
