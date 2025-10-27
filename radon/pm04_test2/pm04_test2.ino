@@ -1,4 +1,4 @@
-// Modified by: Nisal v0.0.1
+// Modified by: Nisal v0.0.2
 // code 2025-10-7
 // This code is used to read the data from the RADON sensor
 // The sensor is a HS-100C / PM04 Radon Sensor
