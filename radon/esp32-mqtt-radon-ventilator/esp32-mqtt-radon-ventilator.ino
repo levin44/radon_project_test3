@@ -1,6 +1,5 @@
-//Created by Nisal - v1.0.3
+//Created by Nisal - v1.0.5
 // Radon ventilator
-//Basic MQTT publish subcribe code
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -13,8 +12,8 @@ const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
 const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
-const char* ssid = "NOVA";
-const char* password = "NOVA22NM";
+const char* ssid = "Nebula";
+const char* password = "2024niDI";
 
 // MQTT broker settings
 const char* mqttServer = "broker.hivemq.com";
@@ -24,10 +23,13 @@ const char* publishTopicRelayStatus = "radoncontrol/relaystatus";
 const char* subscribeTopicRelay = "radoncontrol/relay";
 const char* subscribeTopicMode = "radoncontrol/mode";
 const char* subscribeTopicRadonValue = "radonvalue/sensor1";
+const char* subscribeTopicRadonValue2 = "radonvalue/sensor2";
+const char* subscribeTopicRadonValue3 = "radonvalue/sensor3";
 
 
 // Pin definitions
 const int relayPin = 2;
+const int relayLEDPin = 22;
 
 // Threshold for high radon
 float highRadonThreshold = 30.0;
@@ -43,6 +45,11 @@ const long msgInterval = 5000; // 5 seconds
 // Publish Data variable
 String publishDataValue = "";
 
+// Latest radon values per sensor
+float lastRadonSensor1 = 0.0;
+float lastRadonSensor2 = 0.0;
+float lastRadonSensor3 = 0.0;
+
 // Wi-Fi and MQTT clients
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -54,7 +61,7 @@ void reconnect();
 void callback(char* topic, byte* message, unsigned int length);
 void handleRelayControl(String message);
 void handleModeControl(String message);
-void handleRadonValue(String message);
+void handleRadonValue(String topic, String message);
 void updateRelayState();
 
 
@@ -65,7 +72,9 @@ void setup() {
 
   // Set pin modes
   pinMode(relayPin, OUTPUT);
+  pinMode(relayLEDPin, OUTPUT);
   digitalWrite(relayPin, LOW);  // Initialize relay OFF
+  digitalWrite(relayLEDPin, LOW);  // Initialize relay indicator led OFF
 
   // Connect to Wi-Fi
   setupWiFi();
@@ -121,6 +130,8 @@ void reconnect() {
       mqttClient.subscribe(subscribeTopicRelay);
       mqttClient.subscribe(subscribeTopicMode);
       mqttClient.subscribe(subscribeTopicRadonValue);
+      mqttClient.subscribe(subscribeTopicRadonValue2);
+      mqttClient.subscribe(subscribeTopicRadonValue3);
     } else {
       Serial.print("Failed, rc=");
       Serial.print(mqttClient.state());
@@ -156,8 +167,10 @@ void callback(char* topic, byte* message, unsigned int length) {
     handleRelayControl(messageTemp);
   } else if (String(topic) == subscribeTopicMode) {
     handleModeControl(messageTemp);
-  } else if (String(topic) == subscribeTopicRadonValue) {
-    handleRadonValue(messageTemp);
+  } else if (String(topic) == subscribeTopicRadonValue ||
+             String(topic) == subscribeTopicRadonValue2 ||
+             String(topic) == subscribeTopicRadonValue3) {
+    handleRadonValue(String(topic), messageTemp);
   }
 }
 
@@ -183,20 +196,35 @@ void handleModeControl(String message) {
   }
 }
 
-void handleRadonValue(String message) {
+void handleRadonValue(String topic, String message) {
   // Parse the radon value from the message
   float radonValue = message.toFloat();
-  Serial.print("Received radon value: ");
+
+  // Track last reading per sensor
+  if (topic == subscribeTopicRadonValue) {
+    lastRadonSensor1 = radonValue;
+  } else if (topic == subscribeTopicRadonValue2) {
+    lastRadonSensor2 = radonValue;
+  } else if (topic == subscribeTopicRadonValue3) {
+    lastRadonSensor3 = radonValue;
+  }
+
+  Serial.print("Received ");
+  Serial.print(topic);
+  Serial.print(" = ");
   Serial.println(radonValue);
     
-  // In auto mode, control relay based on radon levels
+  // In auto mode, control relay based on any sensor exceeding threshold
   if (currentMode == "auto") {
-    if (radonValue > highRadonThreshold) {  // Threshold for high radon
-      relayState = true;
-      Serial.println("Auto mode: High radon detected, turning relay ON");
+    bool anyHigh = (lastRadonSensor1 > highRadonThreshold) ||
+                   (lastRadonSensor2 > highRadonThreshold) ||
+                   (lastRadonSensor3 > highRadonThreshold);
+
+    relayState = anyHigh;
+    if (anyHigh) {
+      Serial.println("Auto mode: High radon detected on at least one sensor, turning relay ON");
     } else {
-      relayState = false;
-      Serial.println("Auto mode: Normal radon levels, turning relay OFF");
+      Serial.println("Auto mode: All sensors normal, turning relay OFF");
     }
     updateRelayState();
   }
@@ -206,6 +234,7 @@ void updateRelayState() {
 // Only update relay in manual mode or when explicitly commanded
 
 digitalWrite(relayPin, relayState ? HIGH : LOW);
+digitalWrite(relayLEDPin, relayState ? HIGH : LOW);
 Serial.print("Relay is ");
 Serial.println(relayState ? "ON" : "OFF");
 Serial.print("Publishing RelayStatus: ");
