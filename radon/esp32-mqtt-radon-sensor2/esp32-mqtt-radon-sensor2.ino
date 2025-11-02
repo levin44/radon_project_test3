@@ -1,4 +1,4 @@
-//Created by Nisal - v1.0.5
+//Created by Nisal - v1.0.6
 //ESP32 MQTT Radon Sensor2 
 
 #include <Arduino.h>
@@ -6,15 +6,19 @@
 #include <PubSubClient.h>
 #include <math.h>
 #include <Rd200m.h>
+#include <LiquidCrystal.h>
 
 //Radon initialize
 #define INTERVAL 60  //sec
-Rd200m radon(&Serial2);
+Rd200m radon(&Serial2); //Serial2 is the RX and TX pins for the Radon sensor
+
+// initialize the LCD library with the numbers of the interface pins
+LiquidCrystal lcd(19, 23, 18, 1, 3, 15);
 
 // Sine Wave Simulation Configuration
 const float SINE_WAVE_MIN_VALUE = 10.0;    // Lowest value of the sine wave
-const float SINE_WAVE_MAX_VALUE = 60.0;    // Highest value of the sine wave
-const float SINE_WAVE_INTERVAL = 90.0;     // Period in seconds for one complete cycle
+const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
+const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
 const char* ssid = "Nebula";
@@ -83,6 +87,11 @@ float generateSimulatedValues() {
 void setup() {
   // Initialize serial communication
   Serial.begin(115200);
+
+  // Initialize LCD display
+  lcd.begin(16, 2);
+  lcd.write("Initializing...");
+  delay(1000);
 
   //Radon setup
   Serial2.begin(19200, SERIAL_8N1, 16, 17);
@@ -165,6 +174,16 @@ void publishData() {
     publishDataValue = generateSimulatedValues();
   }
 
+  //printing on the LCD display
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.write("Radon Value :");
+  lcd.setCursor(0, 1);
+  lcd.print(publishDataValue);
+  lcd.setCursor(7, 1);
+  lcd.write("Bq");
+  // delay(1000);
+
   // Convert publishDataValue to char array
   char dataString[8];
   dtostrf(publishDataValue, 1, 2, dataString);
@@ -172,6 +191,7 @@ void publishData() {
   Serial.print("Publishing Data Value: ");
   Serial.println(dataString);
 
+  //publishing data via mqtt
   mqttClient.publish(publishTopicRadonValue, dataString);
 }
 

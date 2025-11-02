@@ -10,7 +10,7 @@
 
 //Radon initialize
 #define INTERVAL 60  //sec
-Rd200m radon(&Serial2);
+Rd200m radon(&Serial2); //Serial2 is the RX and TX pins for the Radon sensor
 
 // initialize the LCD library with the numbers of the interface pins
 LiquidCrystal lcd(19, 23, 18, 1, 3, 15);
