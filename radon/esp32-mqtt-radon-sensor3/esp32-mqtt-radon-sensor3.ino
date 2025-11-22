@@ -95,7 +95,7 @@ void setup() {
 
   //Radon setup
   Serial2.begin(19200, SERIAL_8N1, 16, 17);
-  Serial.println("\nRadon Sensor RD200M V1.0 April 10, 2018");
+  Serial.println("\nRadon Sensor RD200M V1.0");
   radon.debug(0);
   radon.onPacket(getit);
 
@@ -168,7 +168,7 @@ void reconnect() {
 
 void publishData() {
   if(currentMode == "real"){
-    publishDataValue = radon.value() ? radon.value()*37: 0.0;
+    publishDataValue = radon.value() ? radon.value()*37: 0.0;// *37 to convert pCi to Bq
   }else if(currentMode == "simulated"){
     // Generate sine wave simulated data
     publishDataValue = generateSimulatedValues();
