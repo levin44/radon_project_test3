@@ -16,13 +16,13 @@ Rd200m radon(&Serial2); //Serial2 is the RX and TX pins for the Radon sensor
 LiquidCrystal lcd(19, 23, 18, 4, 21, 15);
 
 // Sine Wave Simulation Configuration
-const float SINE_WAVE_MIN_VALUE = 10.0;    // Lowest value of the sine wave
-const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
-const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
+const float SINE_WAVE_MIN_VALUE = 5.0;    // Lowest value of the sine wave
+const float SINE_WAVE_MAX_VALUE = 90.0;    // Highest value of the sine wave
+const float SINE_WAVE_INTERVAL = 80.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
-const char* ssid = "Nebula";
-const char* password = "2024niDI";
+const char* ssid = "akenwifi";
+const char* password = "aken1234";
 
 // MQTT broker settings
 const char* mqttServer = "broker.hivemq.com";
@@ -181,7 +181,7 @@ void publishData() {
   lcd.setCursor(0, 1);
   lcd.print(publishDataValue);
   lcd.setCursor(7, 1);
-  lcd.write("Bq");
+  lcd.write("Bq/m3");
   // delay(1000);
 
   // Convert publishDataValue to char array

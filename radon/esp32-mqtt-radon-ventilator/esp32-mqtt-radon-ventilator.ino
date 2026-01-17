@@ -12,8 +12,8 @@ const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
 const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
-const char* ssid = "Nebula";
-const char* password = "2024niDI";
+const char* ssid = "akenwifi";
+const char* password = "aken1234";
 
 // MQTT broker settings
 const char* mqttServer = "broker.hivemq.com";
@@ -32,7 +32,7 @@ const int relayPin = 2;
 const int relayLEDPin = 22;
 
 // Threshold for high radon
-float highRadonThreshold = 30.0;
+float highRadonThreshold = 40.0;
 
 // Mode control variables
 String currentMode = "auto";  // Default to auto mode
