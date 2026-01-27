@@ -109,12 +109,9 @@ void loop() {
 
   if (millis() - lastLogTime >= logInterval) {
     lastLogTime = millis();
-
     time_t now = time(nullptr);
     float value = readSensor();
-
     appendCSV(now, value);
-
     Serial.printf("Logged: %ld , %.2f\n", now, value);
   }
 }
