@@ -12,8 +12,8 @@ const float SINE_WAVE_MAX_VALUE = 50.0;    // Highest value of the sine wave
 const float SINE_WAVE_INTERVAL = 60.0;     // Period in seconds for one complete cycle
 
 // Wi-Fi credentials
-const char* ssid = "akenwifi";
-const char* password = "aken1234";
+const char* ssid = "Nebula";
+const char* password = "2024niDI";
 
 // MQTT broker settings
 const char* mqttServer = "broker.hivemq.com";
